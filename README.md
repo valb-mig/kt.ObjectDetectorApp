@@ -1,4 +1,3 @@
-readme_content = """
 # Object Detector App
 
 Aplicativo Android para detectar objetos em tempo real usando TensorFlow Lite e Jetpack Compose.
