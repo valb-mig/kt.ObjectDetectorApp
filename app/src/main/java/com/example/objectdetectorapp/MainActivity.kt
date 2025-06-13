@@ -39,6 +39,8 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
 
 class MainActivity : ComponentActivity() {
 
@@ -145,7 +147,8 @@ class MainActivity : ComponentActivity() {
     fun CameraPreviewWithDetector() {
         val context = LocalContext.current
         val lifecycleOwner = LocalLifecycleOwner.current
-        val detectorHelper = remember { ObjectDetectorHelper(context) }
+        var scoreThreshold by remember { mutableStateOf(0.6f) }
+        val detectorHelper = remember(scoreThreshold) { ObjectDetectorHelperWithScore(context, scoreThreshold) }
         val logMessages = remember { mutableStateListOf("Iniciando...") }
         val previewView = remember { PreviewView(context) }
 
@@ -157,7 +160,7 @@ class MainActivity : ComponentActivity() {
         val configuration = LocalContext.current.resources.configuration
         val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-        DisposableEffect(Unit) {
+        DisposableEffect(scoreThreshold) {
             val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
 
             val listener = Runnable {
@@ -215,6 +218,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Layout com preview, overlay, logs, e controle do score
         if (isLandscape) {
             Row(Modifier.fillMaxSize()) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -224,6 +228,15 @@ class MainActivity : ComponentActivity() {
                         detections = detections,
                         imageSize = imageSize,
                         previewSize = Size(previewView.width.toFloat(), previewView.height.toFloat())
+                    )
+                    // Mostrar score no canto inferior esquerdo
+                    Text(
+                        text = "Score: ${"%.2f".format(scoreThreshold)}",
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .align(Alignment.BottomStart),
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
 
@@ -253,6 +266,38 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
+                    // Botões de aumentar e diminuir score (pequenos circulares)
+                    Row(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                if (scoreThreshold > 0.1f) {
+                                    scoreThreshold -= 0.05f
+                                }
+                            },
+                            modifier = Modifier.size(40.dp),
+                            shape = CircleShape,
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("-", style = MaterialTheme.typography.titleLarge)
+                        }
+
+                        Button(
+                            onClick = {
+                                if (scoreThreshold < 1f) {
+                                    scoreThreshold += 0.05f
+                                }
+                            },
+                            modifier = Modifier.size(40.dp),
+                            shape = CircleShape,
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("+", style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
+
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         itemsIndexed(logMessages) { index, log ->
                             Text(
@@ -266,16 +311,27 @@ class MainActivity : ComponentActivity() {
                 }
             }
         } else {
+            // Layout vertical (pra quando estiver na vertical)
             Column(Modifier.fillMaxSize()) {
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
                     AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
                     DetectionOverlay(
                         modifier = Modifier.fillMaxSize(),
                         detections = detections,
                         imageSize = imageSize,
                         previewSize = Size(previewView.width.toFloat(), previewView.height.toFloat())
+                    )
+                    Text(
+                        text = "Score: ${"%.2f".format(scoreThreshold)}",
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .align(Alignment.BottomStart),
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
 
@@ -294,6 +350,37 @@ class MainActivity : ComponentActivity() {
 
                     Button(onClick = { logMessages.clear() }) {
                         Text("Limpar Logs")
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            if (scoreThreshold > 0.1f) {
+                                scoreThreshold -= 0.05f
+                            }
+                        },
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("-", style = MaterialTheme.typography.titleLarge)
+                    }
+
+                    Button(
+                        onClick = {
+                            if (scoreThreshold < 1f) {
+                                scoreThreshold += 0.05f
+                            }
+                        },
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("+", style = MaterialTheme.typography.titleLarge)
                     }
                 }
 

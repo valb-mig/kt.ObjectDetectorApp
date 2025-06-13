@@ -1,4 +1,3 @@
-// ObjectDetectorHelper.kt
 package com.example.objectdetectorapp
 
 import android.content.Context
@@ -7,18 +6,18 @@ import org.tensorflow.lite.task.vision.detector.ObjectDetector
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.task.vision.detector.Detection
 
-class ObjectDetectorHelper(context: Context) {
-    private val objectDetector: ObjectDetector
+class ObjectDetectorHelperWithScore(context: Context, scoreThreshold: Float) {
+    val objectDetector: ObjectDetector
 
     init {
         val options = ObjectDetector.ObjectDetectorOptions.builder()
             .setMaxResults(3)
-            .setScoreThreshold(0.6f)
+            .setScoreThreshold(scoreThreshold)
             .build()
 
         objectDetector = ObjectDetector.createFromFileAndOptions(
             context,
-            "common_detect.tflite", // seu modelo
+            "common_detect.tflite",
             options
         )
     }
